@@ -1,0 +1,3 @@
+# godl
+
+Download go releases
