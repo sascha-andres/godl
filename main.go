@@ -22,7 +22,7 @@ func init() {
 	flag.SetEnvPrefix("GODL")
 
 	flag.BoolVar(&printVersions, "print", false, "use to print all versions for current os & arch")
-	flag.BoolVar(&printVersions, "print", false, "more verbose output")
+	flag.BoolVar(&verbose, "verbose", false, "more verbose output")
 	flag.BoolVar(&download, "download", false, "download provided version")
 	flag.BoolVar(&forceDownload, "force-download", false, "force new download")
 	flag.BoolVar(&skipDownload, "skip-download", false, "skip download if it exists")
