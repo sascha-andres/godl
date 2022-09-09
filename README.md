@@ -26,3 +26,9 @@ Examples:
 
     GODL_LINK=true
     GODL_VERSION=1.19.1
+
+## History
+
+|Version|Date|Description|
+|---|---|---|
+|0.1.0|09/09/2022|initial release|
