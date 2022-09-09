@@ -3,6 +3,10 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
 	"path"
 	"strings"
 )

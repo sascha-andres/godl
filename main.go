@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	printVersions, download, link           bool
-	version, destinationDirectory, linkName string
+	printVersions, download, link, forceDownload, skipDownload bool
+	version, destinationDirectory, linkName                    string
 )
 
 func init() {
@@ -22,6 +22,8 @@ func init() {
 
 	flag.BoolVar(&printVersions, "print", false, "use to print all versions for current os & arch")
 	flag.BoolVar(&download, "download", false, "download provided version")
+	flag.BoolVar(&forceDownload, "force-download", false, "force new download")
+	flag.BoolVar(&skipDownload, "skip-download", false, "skip download if it exists")
 	flag.BoolVar(&link, "link", false, "link go version as linkname")
 	flag.StringVar(&linkName, "link-name", "current", "name (path) of symlink")
 	flag.StringVar(&version, "version", "", "download this version")
@@ -108,6 +110,20 @@ func downloadGoVersion(a *internal.Application) error {
 	}
 	if _, err := os.Stat(downloadDestination); !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%s already exists, manual cleanup may be required", downloadDestination)
+	}
+	if _, err := os.Stat(saveDestination); !errors.Is(err, fs.ErrNotExist) {
+		if !forceDownload {
+			if skipDownload {
+				// TODO (#3)
+				log.Print("skipping download, already downloaded")
+				return nil
+			}
+			return fmt.Errorf("%s already exists, not downloading. To set symbolic link, call without -download", saveDestination)
+		}
+		err = os.RemoveAll(saveDestination)
+		if err != nil {
+			return fmt.Errorf("%s already existed and could not be removed", downloadDestination)
+		}
 	}
 	// TODO(#3)
 	log.Printf("downloading to %s", downloadDestination)

@@ -8,6 +8,8 @@ You can use the following flags to specifiy actions:
 
     -print: use to print all versions for current os & arch
     -download: download provided version
+    -force-download: force new download
+    -skip-download: skip download if it exists (convenience for scripting purposes)
     -link: link go version as linkname
     -link-name: name (path) of symlink, defaulting to current, a link alongside the download location
     -version: download this version
