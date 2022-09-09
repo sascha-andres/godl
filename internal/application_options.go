@@ -13,3 +13,10 @@ func WithBaseUrl(baseUrl string) ApplicationOption {
 		return nil
 	}
 }
+
+func WithVerbose() ApplicationOption {
+	return func(application *Application) error {
+		application.verbose = true
+		return nil
+	}
+}

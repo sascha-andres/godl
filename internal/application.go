@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"errors"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"io"
 	"log"
@@ -32,19 +33,21 @@ func NewApplication(opts ...ApplicationOption) (*Application, error) {
 			log.Printf("error setting option: %s", err)
 		}
 	}
-	a.queryVersions()
-	return a, nil
+	return a, a.queryVersions()
 }
 
 // queryVersions connects to go.dev to gather all known go versions
-func (a *Application) queryVersions() {
+func (a *Application) queryVersions() error {
 	res, err := http.Get(a.baseUrl.String())
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		log.Printf("error closing http response body: %s", err)
+	}()
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		return fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
 	// Load the HTML document
@@ -57,6 +60,7 @@ func (a *Application) queryVersions() {
 	doc.Find(".download").Each(func(i int, s *goquery.Selection) {
 		a.processSelection(s)
 	})
+	return nil
 }
 
 // processSelection is transforming a download link to out internal version representation
@@ -144,8 +148,9 @@ func (a *Application) Untar(dst string, r io.Reader) error {
 
 		target := filepath.Join(dst, header.Name)
 
-		// TODO(#3)
-		log.Printf("tar content: %s", target)
+		if a.verbose {
+			log.Printf("tar content: %s", target)
+		}
 
 		// the following switch could also be done using fi.Mode(), not sure if there
 		// a benefit of using one vs. the other.
@@ -154,7 +159,7 @@ func (a *Application) Untar(dst string, r io.Reader) error {
 		// check the file type
 		switch header.Typeflag {
 
-		// if its a dir and it doesn't exist create it
+		// if it's a dir, and it doesn't exist, create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, 0755); err != nil {
@@ -199,15 +204,17 @@ func (a *Application) Unzip(zipFile, dst string) error {
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(dst, f.Name)
-		// TODO(#3)
-		log.Println("unzipping file ", filePath)
+		if a.verbose {
+			log.Println("unzipping file ", filePath)
+		}
 
 		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
 			return errors.New("invalid file path")
 		}
 		if f.FileInfo().IsDir() {
-			// TODO(#3)
-			log.Println("creating directory...")
+			if a.verbose {
+				log.Println("creating directory...")
+			}
 			_ = os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}

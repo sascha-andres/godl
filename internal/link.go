@@ -22,7 +22,7 @@ func CreateSymlinkPath(destinationDir, symbolicLinkname string) string {
 // Link will create a symbolic link from src to dst
 func Link(src, dst string) error {
 	if _, err := os.Stat(dst); errors.Is(err, fs.ErrNotExist) {
-		return linkInternal(src, dst)
+		return os.Symlink(src, dst)
 	}
 
 	fi, err := os.Lstat(dst)
@@ -37,9 +37,5 @@ func Link(src, dst string) error {
 		}
 	}
 
-	return linkInternal(src, dst)
-}
-
-func linkInternal(src, dst string) error {
 	return os.Symlink(src, dst)
 }

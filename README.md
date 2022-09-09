@@ -13,6 +13,7 @@ You can use the following flags to specifiy actions:
     -link: link go version as linkname
     -link-name: name (path) of symlink, defaulting to current, a link alongside the download location
     -version: download this version
+    -verbose: ramp up verbosity
     -destination: save version in this directory
 
 On Windows this has to be relative, while on linux it may be absolute.

@@ -13,14 +13,16 @@ import (
 )
 
 var (
-	printVersions, download, link, forceDownload, skipDownload bool
-	version, destinationDirectory, linkName                    string
+	printVersions, download, link, forceDownload bool
+	skipDownload, verbose                        bool
+	version, destinationDirectory, linkName      string
 )
 
 func init() {
 	flag.SetEnvPrefix("GODL")
 
 	flag.BoolVar(&printVersions, "print", false, "use to print all versions for current os & arch")
+	flag.BoolVar(&printVersions, "print", false, "more verbose output")
 	flag.BoolVar(&download, "download", false, "download provided version")
 	flag.BoolVar(&forceDownload, "force-download", false, "force new download")
 	flag.BoolVar(&skipDownload, "skip-download", false, "skip download if it exists")
@@ -48,28 +50,38 @@ func main() {
 	}
 
 	if download {
-		// TODO (#3)
-		log.Print("Starting download")
+		logOnVerbose("Starting download")
 		err = downloadGoVersion(a)
 		if err != nil {
 			log.Printf("error downloading go: %s", err)
 			os.Exit(1)
 		}
-		// TODO (#3)
-		log.Print("Download done")
+		logOnVerbose("Download done")
 	}
 
 	if link {
-		// TODO (#3)
-		log.Print("Creating symlink")
+		logOnVerbose("Creating symlink")
 		err = createSymLink()
 		if err != nil {
 			log.Printf("error creating symbolic link: %s", err)
 			os.Exit(1)
 		}
-		// TODO (#3)
-		log.Print("Symlink done")
+		logOnVerbose("Symlink done")
 	}
+}
+
+// logOnVerbose calls log.Print to print to the standard logger.
+// Arguments are handled in the manner of fmt.Print. It calls only
+// // if verbose is active
+func logOnVerbose(val string) {
+	log.Print(val)
+}
+
+// logOnVerbosef calls log.Printf to print to the standard logger.
+// Arguments are handled in the manner of fmt.Printf. It calls only
+// if verbose is active
+func logOnVerbosef(format string, v ...any) {
+	log.Printf(format, v...)
 }
 
 // createSymLink creates a symlink for go version
@@ -114,8 +126,7 @@ func downloadGoVersion(a *internal.Application) error {
 	if _, err := os.Stat(saveDestination); !errors.Is(err, fs.ErrNotExist) {
 		if !forceDownload {
 			if skipDownload {
-				// TODO (#3)
-				log.Print("skipping download, already downloaded")
+				logOnVerbose("skipping download, already downloaded")
 				return nil
 			}
 			return fmt.Errorf("%s already exists, not downloading. To set symbolic link, call without -download", saveDestination)
@@ -125,8 +136,7 @@ func downloadGoVersion(a *internal.Application) error {
 			return fmt.Errorf("%s already existed and could not be removed", downloadDestination)
 		}
 	}
-	// TODO(#3)
-	log.Printf("downloading to %s", downloadDestination)
+	logOnVerbosef("downloading to %s", downloadDestination)
 	err := os.MkdirAll(downloadDestination, 0700)
 	if err != nil {
 		return fmt.Errorf("error creating directory: %s", err)
@@ -142,7 +152,7 @@ func downloadGoVersion(a *internal.Application) error {
 	}
 	err = download.Close()
 	if err != nil {
-		log.Printf("error closing downloaded file: %s", err)
+		return fmt.Errorf("error closing downloaded file: %s", err)
 	}
 	if strings.HasSuffix(downloadFile, ".tar.gz") {
 		f, err := os.Open(downloadFile)
