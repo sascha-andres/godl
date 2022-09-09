@@ -44,7 +44,9 @@ func (a *Application) queryVersions() error {
 	}
 	defer func() {
 		err := res.Body.Close()
-		log.Printf("error closing http response body: %s", err)
+		if err != nil {
+			log.Printf("error closing http response body: %s", err)
+		}
 	}()
 	if res.StatusCode != 200 {
 		return fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
