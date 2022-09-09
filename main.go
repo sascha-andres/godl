@@ -13,13 +13,17 @@ import (
 )
 
 var (
-	printVersions, download       bool
-	version, destinationDirectory string
+	printVersions, download, link           bool
+	version, destinationDirectory, linkName string
 )
 
 func init() {
+	flag.SetEnvPrefix("GODL")
+
 	flag.BoolVar(&printVersions, "print", false, "use to print all versions for current os & arch")
 	flag.BoolVar(&download, "download", false, "download provided version")
+	flag.BoolVar(&link, "link", false, "link go version as linkname")
+	flag.StringVar(&linkName, "link-name", "current", "name (path) of symlink")
 	flag.StringVar(&version, "version", "", "download this version")
 	flag.StringVar(&destinationDirectory, "destination", "", "save version in this directory")
 }
@@ -42,21 +46,54 @@ func main() {
 	}
 
 	if download {
+		// TODO (#3)
+		log.Print("Starting download")
 		err = downloadGoVersion(a)
 		if err != nil {
 			log.Printf("error downloading go: %s", err)
 			os.Exit(1)
 		}
+		// TODO (#3)
+		log.Print("Download done")
 	}
+
+	if link {
+		// TODO (#3)
+		log.Print("Creating symlink")
+		err = createSymLink()
+		if err != nil {
+			log.Printf("error creating symbolic link: %s", err)
+			os.Exit(1)
+		}
+		// TODO (#3)
+		log.Print("Symlink done")
+	}
+}
+
+// createSymLink creates a symlink for go version
+func createSymLink() error {
+	if "" == version {
+		return errors.New("no version provided")
+	}
+	if destinationDirectory == "" {
+		return errors.New("no destination provided")
+	}
+
+	saveDestination := path.Join(destinationDirectory, fmt.Sprintf("%s", version))
+	if _, err := os.Stat(saveDestination); errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("no go version %s in %s", version, destinationDirectory)
+	}
+
+	return internal.Link(saveDestination, internal.CreateSymlinkPath(destinationDirectory, linkName))
 }
 
 // downloadGoVersion will download selected go version
 func downloadGoVersion(a *internal.Application) error {
 	if version == "" {
-		return fmt.Errorf("no version provided")
+		return errors.New("no version provided")
 	}
 	if destinationDirectory == "" {
-		return fmt.Errorf("no destination provided")
+		return errors.New("no destination provided")
 	}
 	downloadDestination := ""
 	saveDestination := ""
