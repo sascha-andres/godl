@@ -22,8 +22,6 @@ func (d *Download) DownloadGoArchive(writer io.Writer) error {
 	if res.StatusCode != 200 {
 		return fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
-	// TODO(#3)
-	log.Println("downloaded")
 	_, err = io.Copy(writer, res.Body)
 	if err != nil {
 		return fmt.Errorf("error writing bytes to file: %s", err)
