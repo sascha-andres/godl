@@ -33,7 +33,7 @@ func NewApplication(opts ...ApplicationOption) (*Application, error) {
 			log.Printf("error setting option: %s", err)
 		}
 	}
-	return a, a.queryVersions()
+	return a, nil
 }
 
 // queryVersions connects to go.dev to gather all known go versions
@@ -110,6 +110,10 @@ func (a *Application) processSelection(s *goquery.Selection) {
 
 // GetDownload will return download data
 func (a *Application) GetDownload(version string) (*Download, error) {
+	err := a.queryVersions()
+	if err != nil {
+		return nil, err
+	}
 	for i := range a.Downloads {
 		if a.Downloads[i].Version == version {
 			return &a.Downloads[i], nil

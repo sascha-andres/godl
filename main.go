@@ -50,13 +50,34 @@ func main() {
 	}
 
 	if download {
-		logOnVerbose("Starting download")
-		err = downloadGoVersion(a)
-		if err != nil {
-			log.Printf("error downloading go: %s", err)
+		if version == "" {
+			log.Print("no version provided")
 			os.Exit(1)
 		}
-		logOnVerbose("Download done")
+		if destinationDirectory == "" {
+			log.Print("no destination provided")
+			os.Exit(1)
+		}
+
+		var downloadDestination, saveDestination string
+
+		downloadDestination, saveDestination, canSkip, err := getDestinationDirectories()
+		if err != nil {
+			log.Printf("error getting destination directories: %s", err)
+			os.Exit(1)
+		}
+
+		if !canSkip {
+			logOnVerbose("Starting download")
+			err = downloadGoVersion(a, downloadDestination, saveDestination)
+			if err != nil {
+				log.Printf("error downloading go: %s", err)
+				os.Exit(1)
+			}
+			logOnVerbose("Download done")
+		} else {
+			logOnVerbose("version exists, download skipped")
+		}
 	}
 
 	if link {
@@ -102,60 +123,34 @@ func createSymLink() error {
 }
 
 // downloadGoVersion will download selected go version
-func downloadGoVersion(a *internal.Application) error {
-	if version == "" {
-		return errors.New("no version provided")
-	}
-	if destinationDirectory == "" {
-		return errors.New("no destination provided")
-	}
-	downloadDestination := ""
-	saveDestination := ""
-	if i, err := os.Stat(destinationDirectory); errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("%s does not exist", destinationDirectory)
-	} else {
-		if !i.IsDir() {
-			return fmt.Errorf("%s is not a directory", destinationDirectory)
-		}
-		downloadDestination = path.Join(destinationDirectory, fmt.Sprintf("_%s", version))
-		saveDestination = path.Join(destinationDirectory, fmt.Sprintf("%s", version))
-	}
-	if _, err := os.Stat(downloadDestination); !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("%s already exists, manual cleanup may be required", downloadDestination)
-	}
-	if _, err := os.Stat(saveDestination); !errors.Is(err, fs.ErrNotExist) {
-		if !forceDownload {
-			if skipDownload {
-				logOnVerbose("skipping download, already downloaded")
-				return nil
-			}
-			return fmt.Errorf("%s already exists, not downloading. To set symbolic link, call without -download", saveDestination)
-		}
-		err = os.RemoveAll(saveDestination)
-		if err != nil {
-			return fmt.Errorf("%s already existed and could not be removed", downloadDestination)
-		}
+func downloadGoVersion(a *internal.Application, downloadDestination string, saveDestination string) error {
+	var err error
+	var downloadFile *os.File
+	var goDownload *internal.Download
+
+	if err != nil {
+		return err
 	}
 	logOnVerbosef("downloading to %s", downloadDestination)
-	err := os.MkdirAll(downloadDestination, 0700)
+	err = os.MkdirAll(downloadDestination, 0700)
 	if err != nil {
 		return fmt.Errorf("error creating directory: %s", err)
 	}
-	d, err := a.GetDownload(version)
+	goDownload, err = a.GetDownload(version)
 	if err != nil {
 		return fmt.Errorf("error selecting download: %s", err)
 	}
-	downloadFile := path.Join(downloadDestination, d.FileName)
-	download, err := os.Create(downloadFile)
-	if err = d.DownloadGoArchive(download); err != nil {
+	downloadFileName := path.Join(downloadDestination, goDownload.FileName)
+	downloadFile, err = os.Create(downloadFileName)
+	if err = goDownload.DownloadGoArchive(downloadFile); err != nil {
 		return fmt.Errorf("error downloading: %s", err)
 	}
-	err = download.Close()
+	err = downloadFile.Close()
 	if err != nil {
 		return fmt.Errorf("error closing downloaded file: %s", err)
 	}
-	if strings.HasSuffix(downloadFile, ".tar.gz") {
-		f, err := os.Open(downloadFile)
+	if strings.HasSuffix(downloadFileName, ".tar.gz") {
+		f, err := os.Open(downloadFileName)
 		if err != nil {
 			return fmt.Errorf("error opening downloaded archive: %s", err)
 		}
@@ -171,8 +166,8 @@ func downloadGoVersion(a *internal.Application) error {
 		}
 	}
 
-	if strings.HasSuffix(downloadFile, ".zip") {
-		err := a.Unzip(downloadFile, downloadDestination)
+	if strings.HasSuffix(downloadFileName, ".zip") {
+		err := a.Unzip(downloadFileName, downloadDestination)
 		if err != nil {
 			return fmt.Errorf("error extracting downloaded archive: %s", err)
 		}
@@ -194,4 +189,35 @@ func downloadGoVersion(a *internal.Application) error {
 		return fmt.Errorf("could not remove download destination: %s", err)
 	}
 	return nil
+}
+
+// getDestinationDirectories calculates destination directories: download dir and save dir, save to link and optionally an error
+func getDestinationDirectories() (string, string, bool, error) {
+	var downloadDestination, saveDestination string
+	if i, err := os.Stat(destinationDirectory); errors.Is(err, fs.ErrNotExist) {
+		return "", "", false, fmt.Errorf("%s does not exist", destinationDirectory)
+	} else {
+		if !i.IsDir() {
+			return "", "", false, fmt.Errorf("%s is not a directory", destinationDirectory)
+		}
+		downloadDestination = path.Join(destinationDirectory, fmt.Sprintf("_%s", version))
+		saveDestination = path.Join(destinationDirectory, fmt.Sprintf("%s", version))
+	}
+	if _, err := os.Stat(downloadDestination); !errors.Is(err, fs.ErrNotExist) {
+		return "", "", false, fmt.Errorf("%s already exists, manual cleanup may be required", downloadDestination)
+	}
+	if _, err := os.Stat(saveDestination); !errors.Is(err, fs.ErrNotExist) {
+		if !forceDownload {
+			if skipDownload {
+				logOnVerbose("skipping download, already downloaded")
+				return "", "", true, nil
+			}
+			return "", "", false, fmt.Errorf("%s already exists, not downloading. To set symbolic link, call without -download", saveDestination)
+		}
+		err = os.RemoveAll(saveDestination)
+		if err != nil {
+			return "", "", false, fmt.Errorf("%s already existed and could not be removed", downloadDestination)
+		}
+	}
+	return downloadDestination, saveDestination, false, nil
 }
