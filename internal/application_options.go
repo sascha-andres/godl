@@ -2,6 +2,13 @@ package internal
 
 import "net/url"
 
+func WithIncludeReleaseCandidates() ApplicationOption {
+	return func(application *Application) error {
+		application.includeReleaseCandidates = true
+		return nil
+	}
+}
+
 // WithBaseUrl allows overriding the base url
 func WithBaseUrl(baseUrl string) ApplicationOption {
 	return func(application *Application) error {

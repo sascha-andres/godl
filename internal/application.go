@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"io"
 	"log"
 	"net/http"
@@ -15,17 +14,31 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
+
+const (
+	stableVersionExtractRegex          = `^go(?P<version>[1-9]\.[0-9]{1,3}(\.[0-9]{1,3})?)\.(?P<goos>[^-]*)-(?P<goarch>[^\\.]*)`
+	inludeReleaseCandidateExtractRegex = `^go(?P<version>[1-9]\.[0-9]{1,3}(\.[0-9]{1,3})?(rc[0-9]{1,2})?)\.(?P<goos>[^-]*)-(?P<goarch>[^\\.]*)`
+	versionSplit                       = `(?P<major>[1-9]{1,2})\.(?P<minor>[0-9]{1,3})((\.(?P<patch>[0-9]{1,3}))?(rc(?P<rc>[0-9]{1,3})))?`
+)
+
+var versionMatch *regexp.Regexp
+
+func init() {
+	r, err := regexp.Compile(versionSplit)
+	if err == nil {
+		versionMatch = r
+	}
+}
 
 // NewApplication returns an instance of the application
 func NewApplication(opts ...ApplicationOption) (*Application, error) {
 	a := &Application{}
-	r, err := regexp.Compile(`^go(?P<version>[1-9]\.[0-9]{1,3}(\.[0-9]{1,3})?)\.(?P<goos>[^-]*)-(?P<goarch>[^\\.]*)`)
-	if err != nil {
-		return nil, err
-	}
-	a.versionRegex = r
 	_ = WithBaseUrl(BaseUrl)(a)
 	for i := range opts {
 		err := opts[i](a)
@@ -33,7 +46,18 @@ func NewApplication(opts ...ApplicationOption) (*Application, error) {
 			log.Printf("error setting option: %s", err)
 		}
 	}
-	return a, nil
+	var r *regexp.Regexp
+	var err error
+	if a.includeReleaseCandidates {
+		r, err = regexp.Compile(inludeReleaseCandidateExtractRegex)
+	} else {
+		r, err = regexp.Compile(stableVersionExtractRegex)
+	}
+	if err != nil {
+		return nil, err
+	}
+	a.versionRegex = r
+	return a, a.queryVersions()
 }
 
 // queryVersions connects to go.dev to gather all known go versions
@@ -62,7 +86,66 @@ func (a *Application) queryVersions() error {
 	doc.Find(".download").Each(func(i int, s *goquery.Selection) {
 		a.processSelection(s)
 	})
+	sort.Sort(ByVersion(a.Downloads))
 	return nil
+}
+
+// getNumericVersion returns the numeric semver data
+func (d *Download) getNumericVersion() (int, int, int, int) {
+	v := d.Version
+	match := versionMatch.FindStringSubmatch(v)
+	result := make(map[string]string)
+	for i, name := range versionMatch.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = match[i]
+		}
+	}
+	major, err := strconv.Atoi(result["major"])
+	if err != nil {
+		return 0, 0, 0, 0
+	}
+	minor, err := strconv.Atoi(result["minor"])
+	if err != nil {
+		return 0, 0, 0, 0
+	}
+	var patch = 0
+	if val, ok := result["patch"]; ok && val != "" {
+		patch, err = strconv.Atoi(val)
+		if err != nil {
+			return 0, 0, 0, 0
+		}
+	}
+	var rc = 0
+	if val, ok := result["rc"]; ok && val != "" {
+		rc, err = strconv.Atoi(val)
+		if err != nil {
+			return 0, 0, 0, 0
+		}
+	}
+	return major, minor, patch, rc
+}
+
+type ByVersion []Download
+
+func (a ByVersion) Len() int      { return len(a) }
+func (a ByVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByVersion) Less(i, j int) bool {
+	if versionMatch == nil {
+		return false
+	}
+	majori, minori, patchi, _ := a[i].getNumericVersion()
+	majorj, minorj, patchj, rcj := a[j].getNumericVersion()
+	if majori < majorj ||
+		(majori == majorj && minori < minorj) ||
+		(majori == majorj && minori == minorj && patchi < patchj) {
+		return false
+	}
+	if majori == majorj && minori == minorj && patchi == patchj {
+		if rcj == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // processSelection is transforming a download link to out internal version representation

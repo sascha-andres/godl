@@ -3,19 +3,20 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/sascha-andres/flag"
-	"github.com/sascha-andres/godl/internal"
 	"io/fs"
 	"log"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/sascha-andres/flag"
+	"github.com/sascha-andres/godl/internal"
 )
 
 var (
-	printVersions, download, link, forceDownload bool
-	skipDownload, verbose                        bool
-	version, destinationDirectory, linkName      string
+	printVersions, download, link, forceDownload    bool
+	skipDownload, verbose, includeReleaseCandidates bool
+	version, destinationDirectory, linkName         string
 )
 
 func init() {
@@ -30,13 +31,19 @@ func init() {
 	flag.StringVar(&linkName, "link-name", "current", "name (path) of symlink")
 	flag.StringVar(&version, "version", "", "download this version")
 	flag.StringVar(&destinationDirectory, "destination", "", "save version in this directory")
+	flag.BoolVar(&includeReleaseCandidates, "include-release-candidates", false, "specify to include release candidates")
 }
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lshortfile)
 	flag.Parse()
 
-	a, err := internal.NewApplication()
+	var opts []internal.ApplicationOption
+	if includeReleaseCandidates {
+		opts = append(opts, internal.WithIncludeReleaseCandidates())
+	}
+
+	a, err := internal.NewApplication(opts...)
 	if err != nil {
 		log.Printf("error constructing application: %s", err)
 		os.Exit(1)

@@ -30,6 +30,8 @@ type (
 		versionRegex *regexp.Regexp
 		// verbose is used to control verbosity
 		verbose bool
+		// includeReleaseCandidates will show release candidates as something to install
+		includeReleaseCandidates bool
 	}
 
 	// ApplicationOption can be used to control behavior
