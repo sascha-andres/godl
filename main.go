@@ -51,7 +51,7 @@ func main() {
 
 	if printVersions {
 		for i := range a.Downloads {
-			log.Println(a.Downloads[i].Url.String())
+			fmt.Println(a.Downloads[i].Url.String())
 		}
 		return
 	}
