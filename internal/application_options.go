@@ -1,6 +1,9 @@
 package internal
 
-import "net/url"
+import (
+	"log/slog"
+	"net/url"
+)
 
 func WithIncludeReleaseCandidates() ApplicationOption {
 	return func(application *Application) error {
@@ -24,6 +27,14 @@ func WithBaseUrl(baseUrl string) ApplicationOption {
 func WithVerbose() ApplicationOption {
 	return func(application *Application) error {
 		application.verbose = true
+		return nil
+	}
+}
+
+// WithLogger allows setting the logger
+func WithLogger(logger *slog.Logger) ApplicationOption {
+	return func(application *Application) error {
+		application.logger = logger
 		return nil
 	}
 }

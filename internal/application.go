@@ -69,7 +69,7 @@ func (a *Application) queryVersions() error {
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.Printf("error closing http response body: %s", err)
+			a.logger.Warn("error closing http response body", "err", err)
 		}
 	}()
 	if res.StatusCode != 200 {
@@ -186,6 +186,7 @@ func (a *Application) processSelection(s *goquery.Selection) {
 		GoOs:     result["goos"],
 		GoArch:   result["goarch"],
 		FileName: title,
+		logger:   a.logger,
 	}
 
 	a.Downloads = append(a.Downloads, d)
@@ -287,23 +288,19 @@ func (a *Application) Unzip(zipFile, dst string) error {
 	defer func() {
 		err := archive.Close()
 		if err != nil {
-			log.Printf("error closing zip archive: %s", err)
+			a.logger.Warn("error closing zip archive", "err", err)
 		}
 	}()
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(dst, f.Name)
-		if a.verbose {
-			log.Println("unzipping file ", filePath)
-		}
+		a.logger.Debug("extracting file", "path", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
 			return errors.New("invalid file path")
 		}
 		if f.FileInfo().IsDir() {
-			if a.verbose {
-				log.Println("creating directory...")
-			}
+			a.logger.Debug("creating directory", "path", filePath)
 			_ = os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
@@ -328,11 +325,11 @@ func (a *Application) Unzip(zipFile, dst string) error {
 
 		err = dstFile.Close()
 		if err != nil {
-			log.Printf("error closing extracted file: %s", err)
+			a.logger.Warn("error closing extracted file", "err", err)
 		}
 		err = fileInArchive.Close()
 		if err != nil {
-			log.Printf("error closing in archive file: %s", err)
+			a.logger.Warn("error closing in archive file", "err", err)
 		}
 	}
 	return nil

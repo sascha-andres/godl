@@ -3,7 +3,6 @@ package internal
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -16,7 +15,7 @@ func (d *Download) DownloadGoArchive(writer io.Writer) error {
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.Printf("error closing http body: %s", err)
+			d.logger.Warn("error closing http body", "err", err)
 		}
 	}()
 	if res.StatusCode != 200 {
