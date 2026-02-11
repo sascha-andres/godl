@@ -33,10 +33,10 @@ var testCasesByVersion = []struct {
 				Version: "1.20rc3",
 			},
 			{
-				Version: "1.19.1",
+				Version: "1.19.1rc1",
 			},
 			{
-				Version: "1.19.1rc1",
+				Version: "1.19.1",
 			},
 			{
 				Version: "1.3",
@@ -53,7 +53,6 @@ func TestByVersion(t *testing.T) {
 			diff := cmp.Diff(testCasesByVersion[i].dlds, testCasesByVersion[i].expected)
 			if diff != "" {
 				t.Logf("mismatch in expectation: \n\n%s", diff)
-				t.Logf("%q", testCasesByVersion[i].dlds)
 				t.Fail()
 			}
 		})

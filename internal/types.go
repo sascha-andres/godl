@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log/slog"
 	"net/url"
 	"regexp"
 )
@@ -18,6 +19,8 @@ type (
 		GoArch string
 		// FileName of download
 		FileName string
+		// Logger is used for logging
+		Logger *slog.Logger
 	}
 
 	// Application is the base for all business logic
@@ -32,6 +35,8 @@ type (
 		verbose bool
 		// includeReleaseCandidates will show release candidates as something to install
 		includeReleaseCandidates bool
+		// logger is used for logging
+		logger *slog.Logger
 	}
 
 	// ApplicationOption can be used to control behavior
