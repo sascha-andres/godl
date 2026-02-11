@@ -31,7 +31,7 @@ func WithVerbose() ApplicationOption {
 	}
 }
 
-// WithLogger allows setting the logger
+// WithLogger allows setting the Logger
 func WithLogger(logger *slog.Logger) ApplicationOption {
 	return func(application *Application) error {
 		application.logger = logger

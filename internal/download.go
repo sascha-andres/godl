@@ -15,7 +15,7 @@ func (d *Download) DownloadGoArchive(writer io.Writer) error {
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			d.logger.Warn("error closing http body", "err", err)
+			d.Logger.Warn("error closing http body", "err", err)
 		}
 	}()
 	if res.StatusCode != 200 {

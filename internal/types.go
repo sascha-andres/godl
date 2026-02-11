@@ -19,8 +19,8 @@ type (
 		GoArch string
 		// FileName of download
 		FileName string
-
-		logger *slog.Logger
+		// Logger is used for logging
+		Logger *slog.Logger
 	}
 
 	// Application is the base for all business logic

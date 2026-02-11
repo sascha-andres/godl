@@ -186,7 +186,7 @@ func (a *Application) processSelection(s *goquery.Selection) {
 		GoOs:     result["goos"],
 		GoArch:   result["goarch"],
 		FileName: title,
-		logger:   a.logger,
+		Logger:   a.logger,
 	}
 
 	a.Downloads = append(a.Downloads, d)
