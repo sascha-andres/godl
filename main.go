@@ -11,7 +11,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/sascha-andres/flag"
+	"github.com/sascha-andres/reuse/flag"
 
 	"github.com/sascha-andres/godl/internal"
 )
@@ -38,7 +38,6 @@ func init() {
 }
 
 func main() {
-
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lshortfile)
 	flag.Parse()
 
