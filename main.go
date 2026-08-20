@@ -19,12 +19,14 @@ import (
 var (
 	printVersions, download, link, forceDownload    bool
 	skipDownload, verbose, includeReleaseCandidates bool
+	toolVersion                                     bool
 	version, destinationDirectory, linkName         string
 )
 
 func init() {
 	flag.SetEnvPrefix("GODL")
 
+	flag.BoolVar(&toolVersion, "tool-version", false, "print the version of this tool and exit")
 	flag.BoolVar(&printVersions, "print", false, "use to print all versions for current os & arch")
 	flag.BoolVar(&verbose, "verbose", false, "more verbose output")
 	flag.BoolVar(&download, "download", false, "download provided version")
@@ -40,6 +42,12 @@ func init() {
 func main() {
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lshortfile)
 	flag.Parse()
+
+	if toolVersion {
+		v, goMinorVersion := toolVersionInfo()
+		fmt.Printf("godl %s build with %s\n", v, goMinorVersion)
+		os.Exit(0)
+	}
 
 	var handlerOpts *slog.HandlerOptions
 	if verbose {
@@ -121,6 +129,48 @@ func main() {
 		}
 		logger.Debug("Symlink done")
 	}
+}
+
+// toolVersionInfo returns the godl version (tag, pseudo-version, or commit) and the
+// go minor version it was built with
+func toolVersionInfo() (version string, goVersion string) {
+	version = "unknown version"
+	goVersion = "unknown go version"
+
+	i, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+
+	if parts := strings.Split(strings.TrimPrefix(i.GoVersion, "go"), "."); len(parts) >= 2 {
+		goVersion = fmt.Sprintf("go%s.%s", parts[0], parts[1])
+	}
+
+	if i.Main.Version != "" && i.Main.Version != "(devel)" {
+		version = i.Main.Version
+		return
+	}
+
+	var revision string
+	var dirty bool
+	for _, s := range i.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+		case "vcs.modified":
+			dirty = s.Value == "true"
+		}
+	}
+	if revision != "" {
+		if len(revision) > 12 {
+			revision = revision[:12]
+		}
+		if dirty {
+			revision += "+dirty"
+		}
+		version = revision
+	}
+	return
 }
 
 // createSymLink creates a symlink for go version

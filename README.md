@@ -15,6 +15,7 @@ You can use the following flags to specifiy actions:
     -version: download this version
     -verbose: ramp up verbosity
     -destination: save version in this directory
+    -tool-version: print the version of godl and the go version it was built with, then exit
 
 On Windows this has to be relative, while on linux it may be absolute.
 
@@ -27,8 +28,18 @@ Examples:
     GODL_LINK=true
     GODL_VERSION=1.19.1
 
+`godl -tool-version` prints output in the form `godl <version> build with <go version>`,
+where `<version>` is the release tag or, for a development build, the commit it was built
+from (with a `+dirty` suffix if there were uncommitted changes at build time).
+
+## Development
+
+Every pull request and every push to `main` runs the test suite and `govulncheck`. Pushing a
+tag matching `v*` additionally builds and publishes a release (linux/amd64, linux/arm64,
+darwin/arm64) via [GoReleaser](https://goreleaser.com).
+
 ## History
 
-|Version|Date|Description|
-|---|---|---|
-|0.1.0|09/09/2022|initial release|
+| Version | Date       | Description     |
+| ------- | ---------- | --------------- |
+| 0.1.0   | 09/09/2022 | initial release |
