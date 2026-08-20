@@ -43,7 +43,7 @@ homebrew_casks:
     hooks:
       post:
         install: |
-          system "codesign", "--force", "-s", "-", "#{bin}/godl"
+          system_command "codesign", args: ["--force", "-s", "-", "#{staged_path}/godl"]
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
