@@ -26,6 +26,23 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 
+brews:
+  - name: godl
+    repository:
+      owner: sascha-andres
+      name: homebrew-tap
+      branch: main
+      git:
+        url: 'ssh://git@github.com/sascha-andres/homebrew-tap.git'
+        private_key: '{{ .Env.HOMEBREW_TAP_DEPLOY_KEY }}'
+    directory: Formula
+    homepage: "https://github.com/sascha-andres/godl"
+    description: "Similar to ansible-role-golang but implemented as a single binary"
+    install: |
+      bin.install "godl"
+    test: |
+      system "#{bin}/godl", "-tool-version"
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
