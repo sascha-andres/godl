@@ -6,7 +6,7 @@ Download go releases
 
 macOS and Linux (amd64/arm64), from version 0.2.0 onward, via Homebrew:
 
-    brew install sascha-andres/tap/godl
+    brew install --cask sascha-andres/tap/godl
 
 ## Usage
 
@@ -43,7 +43,7 @@ from (with a `+dirty` suffix if there were uncommitted changes at build time).
 Every pull request and every push to `main` runs the test suite and `govulncheck`. Pushing a
 tag matching `v*` additionally builds and publishes a release (linux/amd64, linux/arm64,
 darwin/arm64) via [GoReleaser](https://goreleaser.com), which since v0.2.0 also updates the
-Homebrew formula in [sascha-andres/homebrew-tap](https://github.com/sascha-andres/homebrew-tap).
+Homebrew cask in [sascha-andres/homebrew-tap](https://github.com/sascha-andres/homebrew-tap).
 
 ## History
 
