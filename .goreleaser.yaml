@@ -40,10 +40,6 @@ homebrew_casks:
     description: "Similar to ansible-role-golang but implemented as a single binary"
     binaries:
       - godl
-    hooks:
-      post:
-        install: |
-          system_command "codesign", args: ["--force", "-s", "-", "#{staged_path}/godl"]
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
